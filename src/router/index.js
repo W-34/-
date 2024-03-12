@@ -25,8 +25,8 @@ const routes = [
   },
   {
     path:'/master/model-manage',
-    name:"master-worker",
-    component:()=>import('../views/master/WorkerView.vue')
+    name:"master-model_manage",
+    component:()=>import('../views/master/ModelManage.vue')
   },
   {
     path:'/master/trade',

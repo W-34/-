@@ -70,15 +70,17 @@
                     console.log(response.data);
                     if(this.loginForm.customerName==="master"&& this.loginForm.password==="12345678"){
                         this.$router.push('/master');
-                    }else if (response.data.msg==="worker") {
-                        this.$Worker_id=response.data.data.workerId;
-                        console.log(this.$Worker_id)
-                        this.$router.push('/worker');
-                    } else if(response.data.msg==="user"){
-                        this.$User_id=response.data.data.customerID;
-                        console.log(this.$User_id)
-                        this.$router.push('/user');
-                    }else{
+                    }
+                    // else if (response.data.msg==="worker") {
+                    //     this.$Worker_id=response.data.data.workerId;
+                    //     console.log(this.$Worker_id)
+                    //     this.$router.push('/worker');
+                    // } else if(response.data.msg==="user"){
+                    //     this.$User_id=response.data.data.customerID;
+                    //     console.log(this.$User_id)
+                    //     this.$router.push('/user');
+                    // }
+                    else{
                         location.reload();//重新加载页面
                         alert("登录错误，请重新登录~");
                     }
