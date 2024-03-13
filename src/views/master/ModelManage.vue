@@ -45,26 +45,33 @@
                   </el-form-item>
             </el-form>
   
-            <h2>模型列表<i class="el-icon-loading"></i></h2>
+            <h2>模型列表</h2>
             <!-- 信息显示 -->
             <el-table :data="tableData" row-key="id" border>
-              <el-table-column prop="id" label="id" width="240">
+              <el-table-column prop="id" label="id" width="50">
               </el-table-column>
-              <el-table-column prop="name" label="模型名" width="220">
+              <el-table-column prop="name" label="模型名" width="180">
               </el-table-column>
-              <el-table-column prop="p1" label="参数1" width="200">
+              <el-table-column prop="p1" label="参数1" width="180">
               </el-table-column>
-              <el-table-column prop="p2" label="参数2" width="200">
+              <el-table-column prop="p2" label="参数2" width="180">
               </el-table-column>
-              <el-table-column prop="p3" label="参数3" width="200">
+              <el-table-column prop="p3" label="参数3" width="180">
               </el-table-column>
-              <el-table-column prop="p4" label="参数4" width="200">
+              <el-table-column prop="p4" label="参数4" width="180">
               </el-table-column>
-              <el-table-column prop="p5" label="参数5" width="200">
+              <el-table-column prop="p5" label="参数5" width="180">
               </el-table-column>
-              <el-table-column fixed="right" label="操作" width="200">
+              <el-table-column prop="p6" label="参数6" width="180">
+              </el-table-column>
+              <el-table-column fixed="right" label="操作" width="250">
                 <template slot-scope="scope">
-                  <el-button type="danger" size="mini" @click="deleteItem(scope.row.id)">删除</el-button>
+                  <el-button fixed="true" size="mini" :id="'model_state_'+scope.row.id" type="primary"  :loading="false" 
+                  @click="runModel(scope.row.id)">运行</el-button>
+                  <el-button fixed="true" size="mini" type="success"  :loading="false" 
+                  @click="runModel(scope.row.id)">查看结果</el-button>
+                  <el-button fixed="true" type="danger" size="mini" @click="deleteItem(scope.row.id)"
+                    >删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -88,22 +95,47 @@
     },
     methods: {
       deleteItem(uid) {
-        console.log(uid);
-        // let deleteForm=new FormData();
-        // deleteForm.append('id',uid);
-        this.$axios.post('/model-manage/delete-model/',{
-          id:uid
-        })
-          .then(response => {
+        this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$axios.post('/model-manage/delete-model/',{
+            id:uid
+          }).then(()=>{
             // 处理成功响应
-            console.log('删除成功');
-            console.log(response);
+            this.$message({
+              type: 'success',
+              message: '删除成功'
+            });
             location.reload();
             // 执行其他操作，如刷新页面或更新数据列表等
           })
           .catch(error => {
             // 处理错误响应
             console.error('删除失败', error);
+          });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+      },
+      runModel(uid) {
+        // console.log(uid);
+        this.$axios.post('/model-manage/run-model/',{
+          id:uid
+        })
+          .then(response => {
+            // 处理成功响应
+            console.log(response);
+            location.reload();
+            // 执行其他操作，如刷新页面或更新数据列表等
+          })
+          .catch(error => {
+            // 处理错误响应
+            console.error('运行失败', error);
           });
       },
       addUser(){
