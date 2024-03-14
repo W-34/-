@@ -47,7 +47,7 @@
   
             <h2>模型列表</h2>
             <!-- 信息显示 -->
-            <el-table :data="tableData" row-key="id" border>
+            <el-table :data="tableData" row-key="id" v-loading="loadingTable" border>
               <el-table-column prop="id" label="id" width="50">
               </el-table-column>
               <el-table-column prop="name" label="模型名" width="180">
@@ -68,13 +68,25 @@
                 <template slot-scope="scope">
                   <el-button fixed="true" size="mini" :id="'model_state_'+scope.row.id" type="primary"  :loading="false" 
                   @click="runModel(scope.row.id)">运行</el-button>
-                  <el-button fixed="true" size="mini" type="success"  :loading="false" 
-                  @click="runModel(scope.row.id)">查看结果</el-button>
+                  <el-button ref="actionButton" fixed="true" size="mini" type="success"  :loading="false" 
+                  @click="watchResult(scope.row.id)">查看结果</el-button>
                   <el-button fixed="true" type="danger" size="mini" @click="deleteItem(scope.row.id)"
                     >删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
+            
+            <el-dialog
+              title="模型运行结果"
+              id="dialog_result"
+              :visible.sync="dialogVisible"
+              width="30%">
+              <span ref="dialog_message">这是一段信息</span>
+              <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+              </span>
+            </el-dialog>
           </el-main>
         </el-container>
       </el-container>
@@ -90,7 +102,9 @@
           form:{
             name:'',
             age:''
-          }
+          },
+          dialogVisible: false,
+          loadingTable:true
       };
     },
     methods: {
@@ -109,7 +123,6 @@
               message: '删除成功'
             });
             location.reload();
-            // 执行其他操作，如刷新页面或更新数据列表等
           })
           .catch(error => {
             // 处理错误响应
@@ -123,7 +136,6 @@
         });
       },
       runModel(uid) {
-        // console.log(uid);
         this.$axios.post('/model-manage/run-model/',{
           id:uid
         })
@@ -137,6 +149,25 @@
             // 处理错误响应
             console.error('运行失败', error);
           });
+      },
+      watchResult(id){
+        // console.log(dialog_message);
+        this.$axios.post('/model-manage/get-model-result/',{
+          "id":id
+        }).then(
+        result=>{
+          console.log(result.data[0].result);
+          this.dialogVisible=true;
+          this.$nextTick(()=>{
+            if(result.data[0].result!=null){
+              this.$refs.dialog_message.innerText=result.data[0].result;
+            }
+            else {
+              this.$refs.dialog_message.innerText="该模型暂无运行结果";
+            }
+          });
+        }
+      )
       },
       addUser(){
         console.log(this.form),
@@ -169,8 +200,8 @@
     mounted() {
       this.$axios.get('/model-manage/get-models/').then(
         result=>{
-          console.log(result.data);
           this.tableData=result.data;
+          this.loadingTable=false
         }
       )
     },
