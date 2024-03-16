@@ -17,6 +17,12 @@
                 <el-menu-item index="1-1">
                   <router-link to="/master/model-manage">模型管理</router-link>
                 </el-menu-item>
+                <el-menu-item index="1-1">
+                  <router-link to="/master/model-manage">模型攻击测试</router-link>
+                </el-menu-item>
+                <el-menu-item index="1-1">
+                  <router-link to="/master/model-manage">模型防御测试</router-link>
+                </el-menu-item>
                 <el-menu-item index="1-2">
                   <router-link to="/master/trade">待新增</router-link>
                 </el-menu-item>
@@ -64,10 +70,22 @@
               </el-table-column>
               <el-table-column prop="p6" label="参数6" width="180">
               </el-table-column>
-              <el-table-column fixed="right" label="操作" width="250">
+              <el-table-column prop="p7" label="参数7" width="180">
+              </el-table-column>
+              <el-table-column prop="p8" label="参数8" width="180">
+              </el-table-column>
+              <el-table-column prop="p9" label="参数9" width="180">
+              </el-table-column>
+              <el-table-column prop="p10" label="参数10" width="180">
+              </el-table-column>
+              <el-table-column prop="p11" label="参数11" width="180">
+              </el-table-column>
+              <el-table-column prop="p12" label="参数12" width="180">
+              </el-table-column>
+              <el-table-column fixed="right" label="操作" width="300">
                 <template slot-scope="scope">
-                  <el-button fixed="true" size="mini" :id="'model_state_'+scope.row.id" type="primary"  :loading="false" 
-                  @click="runModel(scope.row.id)">运行</el-button>
+                  <el-button fixed="true" size="mini" type="primary"  :loading="buttonStates[scope.row.id]===1" 
+                  @click="runModel(scope.row.id)">{{ getButtonText(scope.row.id) }}</el-button>
                   <el-button ref="actionButton" fixed="true" size="mini" type="success"  :loading="false" 
                   @click="watchResult(scope.row.id)">查看结果</el-button>
                   <el-button fixed="true" type="danger" size="mini" @click="deleteItem(scope.row.id)"
@@ -78,10 +96,12 @@
             
             <el-dialog
               title="模型运行结果"
-              id="dialog_result"
               :visible.sync="dialogVisible"
-              width="30%">
-              <span ref="dialog_message">这是一段信息</span>
+              width="50%">
+              <span ref="dialog_message"></span>
+              <div class="scrollable-text">
+                <pre>{{ resultContent }}</pre>
+              </div>
               <span slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取 消</el-button>
                 <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
@@ -104,7 +124,9 @@
             age:''
           },
           dialogVisible: false,
-          loadingTable:true
+          loadingTable:true,
+          buttonStates: [],
+          resultContent:'',
       };
     },
     methods: {
@@ -136,18 +158,38 @@
         });
       },
       runModel(uid) {
+        this.$set(this.buttonStates, uid, 1);
         this.$axios.post('/model-manage/run-model/',{
           id:uid
         })
           .then(response => {
-            // 处理成功响应
             console.log(response);
-            location.reload();
-            // 执行其他操作，如刷新页面或更新数据列表等
+            this.$set(this.buttonStates, uid, 2);
           })
           .catch(error => {
             // 处理错误响应
             console.error('运行失败', error);
+            this.$set(this.buttonStates, uid, 0);
+          });
+      },
+      getButtonText(uid){
+        let state=this.buttonStates[uid];
+        if(state==1)
+          return "运行中"
+        else if(state==2)
+          return "运行完成"
+        else
+          return "运行"
+      },
+      loadResultContent(path){
+        console.log(path);
+        this.$axios.post("/model-manage/get-file/",{
+          "path":path
+        }).then(response => {
+            this.resultContent = response.data;
+          })
+          .catch(error => {
+            console.error('Error loading txt file:', error);
           });
       },
       watchResult(id){
@@ -160,7 +202,8 @@
           this.dialogVisible=true;
           this.$nextTick(()=>{
             if(result.data[0].result!=null){
-              this.$refs.dialog_message.innerText=result.data[0].result;
+              this.$refs.dialog_message.innerText='训练结果路径：'+result.data[0].result;
+              this.loadResultContent(result.data[0].result);
             }
             else {
               this.$refs.dialog_message.innerText="该模型暂无运行结果";
@@ -201,7 +244,8 @@
       this.$axios.get('/model-manage/get-models/').then(
         result=>{
           this.tableData=result.data;
-          this.loadingTable=false
+          this.loadingTable=false;
+          this.buttonStates = new Array(this.tableData.length).fill(0);
         }
       )
     },
@@ -223,5 +267,9 @@
   .el-menu {
     background-color: #FFD8B5; /* 浅橙色背景颜色 */
     opacity: 0.9;
+  }
+  .scrollable-text {
+    max-height: 500px; /* 设置最大高度 */
+    overflow-y: auto; /* 垂直方向滚动条 */
   }
   </style>
