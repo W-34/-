@@ -17,6 +17,12 @@
                 <el-menu-item index="1-1">
                   <router-link to="/master/model-manage">模型管理</router-link>
                 </el-menu-item>
+                <el-menu-item index="1-1">
+                  <router-link to="/master/model-manage">模型攻击测试</router-link>
+                </el-menu-item>
+                <el-menu-item index="1-1">
+                  <router-link to="/master/model-manage">模型防御测试</router-link>
+                </el-menu-item>
                 <el-menu-item index="1-2">
                   <router-link to="/master/trade">待新增</router-link>
                 </el-menu-item>
@@ -45,29 +51,62 @@
                   </el-form-item>
             </el-form>
   
-            <h2>模型列表<i class="el-icon-loading"></i></h2>
+            <h2>模型列表</h2>
             <!-- 信息显示 -->
-            <el-table :data="tableData" row-key="id" border>
-              <el-table-column prop="id" label="id" width="240">
+            <el-table :data="tableData" row-key="id" v-loading="loadingTable" border>
+              <el-table-column prop="id" label="id" width="50">
               </el-table-column>
-              <el-table-column prop="name" label="模型名" width="220">
+              <el-table-column prop="name" label="模型名" width="180">
               </el-table-column>
-              <el-table-column prop="p1" label="参数1" width="200">
+              <el-table-column prop="p1" label="参数1" width="180">
               </el-table-column>
-              <el-table-column prop="p2" label="参数2" width="200">
+              <el-table-column prop="p2" label="参数2" width="180">
               </el-table-column>
-              <el-table-column prop="p3" label="参数3" width="200">
+              <el-table-column prop="p3" label="参数3" width="180">
               </el-table-column>
-              <el-table-column prop="p4" label="参数4" width="200">
+              <el-table-column prop="p4" label="参数4" width="180">
               </el-table-column>
-              <el-table-column prop="p5" label="参数5" width="200">
+              <el-table-column prop="p5" label="参数5" width="180">
               </el-table-column>
-              <el-table-column fixed="right" label="操作" width="200">
+              <el-table-column prop="p6" label="参数6" width="180">
+              </el-table-column>
+              <el-table-column prop="p7" label="参数7" width="180">
+              </el-table-column>
+              <el-table-column prop="p8" label="参数8" width="180">
+              </el-table-column>
+              <el-table-column prop="p9" label="参数9" width="180">
+              </el-table-column>
+              <el-table-column prop="p10" label="参数10" width="180">
+              </el-table-column>
+              <el-table-column prop="p11" label="参数11" width="180">
+              </el-table-column>
+              <el-table-column prop="p12" label="参数12" width="180">
+              </el-table-column>
+              <el-table-column fixed="right" label="操作" width="300">
                 <template slot-scope="scope">
-                  <el-button type="danger" size="mini" @click="deleteItem(scope.row.id)">删除</el-button>
+                  <el-button fixed="true" size="mini" type="primary"  :loading="buttonStates[scope.row.id]===1" 
+                  @click="runModel(scope.row.id)">{{ getButtonText(scope.row.id) }}</el-button>
+                  <el-button ref="actionButton" fixed="true" size="mini" type="success"  :loading="false" 
+                  @click="watchResult(scope.row.id)">查看结果</el-button>
+                  <el-button fixed="true" type="danger" size="mini" @click="deleteItem(scope.row.id)"
+                    >删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
+            
+            <el-dialog
+              title="模型运行结果"
+              :visible.sync="dialogVisible"
+              width="50%">
+              <span ref="dialog_message"></span>
+              <div class="scrollable-text">
+                <pre>{{ resultContent }}</pre>
+              </div>
+              <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+              </span>
+            </el-dialog>
           </el-main>
         </el-container>
       </el-container>
@@ -83,28 +122,95 @@
           form:{
             name:'',
             age:''
-          }
+          },
+          dialogVisible: false,
+          loadingTable:true,
+          buttonStates: [],
+          resultContent:'',
       };
     },
     methods: {
       deleteItem(uid) {
-        console.log(uid);
-        // let deleteForm=new FormData();
-        // deleteForm.append('id',uid);
-        this.$axios.post('/model-manage/delete-model/',{
-          id:uid
-        })
-          .then(response => {
+        this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$axios.post('/model-manage/delete-model/',{
+            id:uid
+          }).then(()=>{
             // 处理成功响应
-            console.log('删除成功');
-            console.log(response);
+            this.$message({
+              type: 'success',
+              message: '删除成功'
+            });
             location.reload();
-            // 执行其他操作，如刷新页面或更新数据列表等
           })
           .catch(error => {
             // 处理错误响应
             console.error('删除失败', error);
           });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+      },
+      runModel(uid) {
+        this.$set(this.buttonStates, uid, 1);
+        this.$axios.post('/model-manage/run-model/',{
+          id:uid
+        })
+          .then(response => {
+            console.log(response);
+            this.$set(this.buttonStates, uid, 2);
+          })
+          .catch(error => {
+            // 处理错误响应
+            console.error('运行失败', error);
+            this.$set(this.buttonStates, uid, 0);
+          });
+      },
+      getButtonText(uid){
+        let state=this.buttonStates[uid];
+        if(state==1)
+          return "运行中"
+        else if(state==2)
+          return "运行完成"
+        else
+          return "运行"
+      },
+      loadResultContent(path){
+        console.log(path);
+        this.$axios.post("/model-manage/get-file/",{
+          "path":path
+        }).then(response => {
+            this.resultContent = response.data;
+          })
+          .catch(error => {
+            console.error('Error loading txt file:', error);
+          });
+      },
+      watchResult(id){
+        // console.log(dialog_message);
+        this.$axios.post('/model-manage/get-model-result/',{
+          "id":id
+        }).then(
+        result=>{
+          console.log(result.data[0].result);
+          this.dialogVisible=true;
+          this.$nextTick(()=>{
+            if(result.data[0].result!=null){
+              this.$refs.dialog_message.innerText='训练结果路径：'+result.data[0].result;
+              this.loadResultContent(result.data[0].result);
+            }
+            else {
+              this.$refs.dialog_message.innerText="该模型暂无运行结果";
+            }
+          });
+        }
+      )
       },
       addUser(){
         console.log(this.form),
@@ -137,8 +243,9 @@
     mounted() {
       this.$axios.get('/model-manage/get-models/').then(
         result=>{
-          console.log(result.data);
           this.tableData=result.data;
+          this.loadingTable=false;
+          this.buttonStates = new Array(this.tableData.length).fill(0);
         }
       )
     },
@@ -160,5 +267,9 @@
   .el-menu {
     background-color: #FFD8B5; /* 浅橙色背景颜色 */
     opacity: 0.9;
+  }
+  .scrollable-text {
+    max-height: 500px; /* 设置最大高度 */
+    overflow-y: auto; /* 垂直方向滚动条 */
   }
   </style>
